@@ -1,7 +1,10 @@
-import express from 'express';
-import { createClient } from 'redis';
 import axios from 'axios';
+import dotenv from 'dotenv';
+import express from 'express';
 import cron from 'node-cron';
+import { createClient } from 'redis';
+
+dotenv.config(); // Load environment variables
 
 const app = express();
 const port = 3000;
@@ -14,7 +17,7 @@ await client.connect();
 
 // Function to fetch fresh data from the API
 const fetchDataFromApi = async () => {
-    const apiURL = 'https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&limit=10&total_count=true&with_problems=false&upcoming=true&format_time=true&start_time__during=2%20days&filtered=true&order_by=start';
+    const apiURL = `https://clist.by:443/api/v4/contest/?username=${process.env.USERNAME}&api_key=${process.env.API_KEY}&limit=10&total_count=true&with_problems=false&upcoming=true&format_time=true&start_time__during=2%20days&filtered=true&order_by=start`;
 
     try {
         const apiResponse = await axios.get(apiURL);
