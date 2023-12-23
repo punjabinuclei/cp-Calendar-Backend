@@ -11,9 +11,15 @@ const port = 3000;
 
 const client = createClient();
 
-client.on('error', err => console.log('Redis Client Error', err));
+client.on('error', err => {
+    console.log('Redis Client Error', err);
+    // Handle the error gracefully; you might choose to log it and continue execution
+});
 
-await client.connect();
+await client.connect().catch(err => {
+    console.error('Error connecting to Redis:', err);
+    // Handle the connection error here as well
+});
 
 // Function to fetch fresh data from the API
 const fetchDataFromApi = async () => {
@@ -27,20 +33,34 @@ const fetchDataFromApi = async () => {
         await client.set(apiURL, JSON.stringify(freshData));
 
         console.log('Data refreshed successfully.');
+        return freshData;
     } catch (error) {
         console.error('Error fetching data from URL:', error);
+        return null;
     }
 };
 
 // Schedule the data refresh every 30 minutes
-cron.schedule('*/30 * * * *', async () => {
-    console.log('Refreshing data...');
-    await fetchDataFromApi();
+const cronJob = cron.schedule('*/30 * * * *', async () => {
+    console.log('Data refresh started at:', new Date().toLocaleString());
+
+    try {
+        console.log('Refreshing data...');
+        await fetchDataFromApi();
+        console.log('Data refresh completed successfully at:', new Date().toLocaleString());
+    } catch (error) {
+        console.error('Error during data refresh:', error);
+    }
 });
 
 // Middleware to check cache before making API request
 app.use(async (req, res, next) => {
-    const cacheKey = 'https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&limit=10&total_count=true&with_problems=false&upcoming=true&format_time=true&start_time__during=2%20days&filtered=true&order_by=start';
+    // Construct the cache key based on request parameters
+    // const username = req.query.username || 'default';
+    // const apiKey = req.query.api_key || 'default';
+    // const limit = req.query.limit || 10;
+
+    const cacheKey = `https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&limit=10&total_count=true&with_problems=false&upcoming=true&format_time=true&start_time__during=2%20days&filtered=true&order_by=start`;
 
     const cachedData = await client.get(cacheKey);
 
@@ -50,27 +70,31 @@ app.use(async (req, res, next) => {
     } else {
         // Fetch fresh data from the URL
         try {
-            const apiResponse = await axios.get(cacheKey);
-            const freshData = apiResponse.data;
+            const freshData = await fetchDataFromApi();
 
-            // Update Redis cache with fresh data
-            await client.set(cacheKey, JSON.stringify(freshData));
+            if (freshData) {
+                // Update Redis cache with fresh data
+                await client.set(cacheKey, JSON.stringify(freshData));
 
-            // Serve fresh data
-            res.send(freshData);
+                // Serve fresh data
+                res.send(freshData);
+            } else {
+                // Handle case where fetching data failed
+                res.status(500).send('Internal Server Error');
+            }
         } catch (error) {
-            console.error('Error fetching data from URL:', error);
+            console.error('Error during middleware execution:', error);
             res.status(500).send('Internal Server Error');
         }
     }
 });
 
-
-// Error handling middleware
+// Error handling middleware - placed at the end
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something went wrong!');
 });
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
