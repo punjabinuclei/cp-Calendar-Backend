@@ -23,7 +23,7 @@ await client.connect().catch(err => {
 
 // Function to fetch fresh data from the API
 const fetchDataFromApi = async () => {
-    const apiURL = `https://clist.by:443/api/v4/contest/?username=${process.env.USERNAME}&api_key=${process.env.API_KEY}&limit=10&total_count=true&with_problems=false&upcoming=true&format_time=true&start_time__during=2%20days&filtered=true&order_by=start`;
+    const apiURL = `https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&?limit=30&total_count=false&with_problems=false&upcoming=true&format_time=true&filtered=true&order_by=start`;
 
     try {
         const apiResponse = await axios.get(apiURL);
@@ -60,7 +60,7 @@ app.use(async (req, res, next) => {
     // const apiKey = req.query.api_key || 'default';
     // const limit = req.query.limit || 10;
 
-    const cacheKey = `https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&limit=10&total_count=true&with_problems=false&upcoming=true&format_time=true&start_time__during=2%20days&filtered=true&order_by=start`;
+    const cacheKey = `https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&?limit=30&total_count=false&with_problems=false&upcoming=true&format_time=true&filtered=true&order_by=start`;
 
     const cachedData = await client.get(cacheKey);
 
