@@ -1,16 +1,19 @@
 
+import axios from 'axios';
 import express from 'express';
 import cron from 'node-cron';
-import axios from 'axios';
-import { connectToRedis, setCache, getCache } from './redis.js';
+import { connectToRedis, getCache, setCache } from './redis.js';
 
 const app = express();
 const port = 3000;
 
+import dotenv from 'dotenv';
+dotenv.config();
+
+
 
 const fetchDataFromApi = async () => {
-    const apiURL = `https://clist.by:443/api/v4/contest/?username=${process.env.USERNAME}&api_key=${process.env.API_KEY}&?limit=30&total_count=false&with_problems=false&upcoming=true&format_time=true&filtered=true&order_by=start`;
-
+    const apiURL = `https://clist.by:443/api/v4/contest/?username=${process.env.USER_NAME}&api_key=${process.env.API_KEY}&?limit=30&total_count=false&with_problems=false&upcoming=true&format_time=true&filtered=true&order_by=start`;
     try {
         const apiResponse = await axios.get(apiURL);
         const freshData = apiResponse.data;
@@ -37,8 +40,9 @@ const cronJob = cron.schedule('*/30 * * * *', async () => {
     }
 });
 
+
 app.use(async (req, res, next) => {
-    const cacheKey = `https://clist.by:443/api/v4/contest/?username=punjabinuclei&api_key=be65f278452f80cd9b221cdbb27831f66abad7b6&?limit=30&total_count=false&with_problems=false&upcoming=true&format_time=true&filtered=true&order_by=start`;
+    const cacheKey = `https://clist.by:443/api/v4/contest/?username=${process.env.USER_NAME}&api_key=${process.env.API_KEY}&?limit=30&total_count=false&with_problems=false&upcoming=true&format_time=true&filtered=true&order_by=start`;
 
     const cachedData = await getCache(cacheKey);
 
